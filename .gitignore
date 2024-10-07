@@ -1,0 +1,65 @@
+# Node.js dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Build output
+.next/
+out/
+build/
+
+# Hardhat cache, build files, and temporary files
+artifacts/
+cache/
+/contracts/cache
+/contracts/artifacts
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies lock files
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Typescript build artifacts
+*.tsbuildinfo
+
+# Hardhat secret files
+secrets.json
+
+# VSCode files
+.vscode/
+*.code-workspace
+
+# Miscellaneous files0
+.DS_Store
+Thumbs.db
+
+# Ignore coverage reports from Hardhat
+coverage/
+coverage.json
+
+# Ignore production files for next.js
+.next/
+.next/cache
+
+# Optional: ignoring generated type files if not manually committed
+# globals.d.ts
+next-env.d.ts
+
+# Tailwind CSS generated files (if any)
+/postcss.config.mjs
+
+# eslint
+.eslintcache
