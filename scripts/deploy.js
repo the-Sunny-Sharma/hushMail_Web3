@@ -1,7 +1,7 @@
 import hre from "hardhat";
 
 async function main() {
-  const Hushmail = await hre.ethers.getContractFactory("HushMail");
+  const Hushmail = await hre.ethers.getContractFactory("HushmailContractv2");
   const contract = await Hushmail.deploy();
   await contract.waitForDeployment();
 
