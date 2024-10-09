@@ -124,7 +124,7 @@ export default function HomePage() {
         </div>
 
         {/* Floating "Post Your Feed" Button */}
-        <Link href="/h/create-feed">
+        <Link href="/create-post">
           <motion.div
             className="fixed bottom-6 right-6 z-50"
             onHoverStart={() => setIsHovered(true)}

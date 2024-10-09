@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Copy,
   ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -42,6 +43,7 @@ interface NavbarProps {
   copyAddress: () => void;
   openEtherscan: () => void;
   copied: boolean;
+  error: string | null;
 }
 
 export default function Navbar({
@@ -55,14 +57,16 @@ export default function Navbar({
   copyAddress,
   openEtherscan,
   copied,
+  error,
 }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
 
   const titles: { [key: string]: string } = {
-    "/h/home": "Home",
-    "/h/dashboard": "Dashboard",
-    "/h/create-feed": "Create Feed",
+    "/homepage": "Home",
+    "/dashboard": "Dashboard",
+    "/create-post": "Create Post",
+    "/settings": "Settings",
   };
 
   const title =
@@ -198,6 +202,20 @@ export default function Navbar({
                   >
                     {loading ? "Connecting..." : "Connect Wallet"}
                   </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center space-x-2 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-3 py-1 rounded-md"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{error}</span>
                 </motion.div>
               )}
             </AnimatePresence>

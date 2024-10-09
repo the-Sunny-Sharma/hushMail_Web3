@@ -73,9 +73,9 @@ export default function Sidebar({
           </li>
           <li>
             <Link
-              href="/h/create-feed"
+              href="/create-post"
               className={`flex items-center p-2 rounded-md ${
-                pathname === "/h/create-feed"
+                pathname === "/create-post"
                   ? "bg-gray-200 dark:bg-gray-700"
                   : "hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
@@ -86,9 +86,9 @@ export default function Sidebar({
           </li>
           <li>
             <Link
-              href="/h/settings"
+              href="/settings"
               className={`flex items-center p-2 rounded-md ${
-                pathname === "/h/settings"
+                pathname === "/settings"
                   ? "bg-gray-200 dark:bg-gray-700"
                   : "hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}

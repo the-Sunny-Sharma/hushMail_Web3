@@ -19,15 +19,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-// import { Progress } from "@/components/ui/progress"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import * as ethers from "ethers";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BrowserProvider, formatEther } from "ethers";
 
 interface Identity {
   name: string;
@@ -131,9 +130,9 @@ const ClientPage: React.FC<Props> = ({ userDetails }) => {
   useEffect(() => {
     const fetchBalance = async () => {
       if (walletAddress) {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new BrowserProvider(window.ethereum);
         const balance = await provider.getBalance(walletAddress);
-        setBalance(ethers.utils.formatEther(balance));
+        setBalance(formatEther(balance));
       }
     };
 
@@ -182,13 +181,13 @@ const ClientPage: React.FC<Props> = ({ userDetails }) => {
     if (typeof window.ethereum !== "undefined") {
       try {
         await window.ethereum.request({ method: "eth_requestAccounts" });
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
+        const provider = new BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
         const address = await signer.getAddress();
         setWalletAddress(address);
 
         const balance = await provider.getBalance(address);
-        setBalance(ethers.utils.formatEther(balance));
+        setBalance(formatEther(balance));
         // Fetch wallet profile picture (this is a mock function, replace with actual implementation)
         const profilePic = await fetchWalletProfilePicture(address);
         setWalletProfilePicture(profilePic);

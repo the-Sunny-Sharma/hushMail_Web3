@@ -1,8 +1,15 @@
 /** @type import('hardhat/config').HardhatUserConfig */
-import "@nomicfoundation/hardhat-toolbox";
-import dotenv from "dotenv";
+require("dotenv").config(); // Make sure this is at the top of your config file.
 
-dotenv.config(); // Load environment variables
+require("@nomicfoundation/hardhat-toolbox");
+
+// require("@nomicfoundation/hardhat-toolbox");
+// require("dotenv").config(); // Load environment variables
+
+// import "@nomicfoundation/hardhat-toolbox";
+// import dotenv from "dotenv";
+
+// dotenv.config(); // Load environment variables
 
 const SEPOLIA_URL = process.env.SEPOLIA_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
