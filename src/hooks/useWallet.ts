@@ -47,12 +47,18 @@ const useWallet = () => {
     }
   };
 
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+    setBalance(null);
+  };
+
   return {
     walletAddress,
     balance,
     loading,
     error,
     connectWallet,
+    disconnectWallet,
     contract, // Expose contract instance
   };
 };

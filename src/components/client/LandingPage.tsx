@@ -1,9 +1,9 @@
 "use client";
 
-import { Environment, OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+// import { Environment, OrbitControls } from "@react-three/drei";
+// import { Canvas } from "@react-three/fiber";
 import React, { useEffect, useState } from "react";
-import { Mail } from "./GLBmodels/Mail";
+// import { Mail } from "./GLBmodels/Mail";
 import Link from "next/link";
 
 interface userDetails {
@@ -54,13 +54,13 @@ const LandingPage: React.FC<Props> = ({ userDetails }) => {
           </div>
         </nav>
       </header>
-      <div className="h-[200px] w-[200px]">
+      {/* <div className="h-[200px] w-[200px]">
         <Canvas>
           <Environment preset="studio" />
           <OrbitControls />
           <Mail />
         </Canvas>
-      </div>
+      </div> */}
     </div>
   );
 };

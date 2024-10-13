@@ -1,4 +1,4 @@
-import { Clock, Eye, EyeOff, MessageSquare } from "lucide-react";
+import { Clock, Eye, EyeOff, MessageSquare, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -10,6 +10,7 @@ interface DashboardStatsProps {
     publicPosts: number;
     privatePosts: number;
     latestResponse: string;
+    totalEarnings: string;
   } | null;
   isLoading: boolean;
 }
@@ -47,6 +48,12 @@ export function DashboardStats({ stats, isLoading }: DashboardStatsProps) {
       color: "bg-purple-500",
     },
     {
+      label: "Total Earnings",
+      value: stats?.totalEarnings ? `${stats.totalEarnings} ETH` : null,
+      icon: DollarSign,
+      color: "bg-green-600",
+    },
+    {
       label: "Latest Response",
       value: stats?.latestResponse,
       icon: Clock,
@@ -55,7 +62,7 @@ export function DashboardStats({ stats, isLoading }: DashboardStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3  xl:grid-cols-4">
       {statItems.map((item, index) => (
         <motion.div
           key={item.label}
@@ -75,7 +82,13 @@ export function DashboardStats({ stats, isLoading }: DashboardStatsProps) {
                     {item.label}
                   </dt>
                   <dd className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
-                    {isLoading ? <Skeleton className="h-9 w-24" /> : item.value}
+                    {isLoading ? (
+                      <Skeleton className="h-9 w-24" />
+                    ) : item.value !== undefined && item.value !== null ? (
+                      item.value
+                    ) : (
+                      "N/A"
+                    )}
                   </dd>
                 </dl>
               </div>

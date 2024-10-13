@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWallet } from "@/hooks/useWallet";
+// import { useWallet } from "@/hooks/useWallet";
 import {
   Globe,
   Lock,
@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Clock,
   DollarSign,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -27,9 +28,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { parseEther } from "ethers";
+import { useSession } from "next-auth/react";
+import { useWalletContext } from "@/context/WalletContext";
 
 export default function CreateFeedPage() {
-  const { walletAddress, contract } = useWallet();
+  // const { walletAddress, contract } = useWallet();
+  const { walletAddress, contract } = useWalletContext();
+  const { data: session } = useSession();
   const [feedContent, setFeedContent] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [showIdentity, setShowIdentity] = useState(true);
@@ -38,38 +43,73 @@ export default function CreateFeedPage() {
   const [isAIAssistLoading, setIsAIAssistLoading] = useState(false);
   const [characterCount, setCharacterCount] = useState(0);
   const [estimatedCost, setEstimatedCost] = useState("0.001");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setCharacterCount(feedContent.length);
-    // Simulating increased cost based on character count
     setEstimatedCost((0.001 + (feedContent.length / 1000) * 0.0001).toFixed(7));
   }, [feedContent]);
 
+  const validateForm = () => {
+    if (!feedContent.trim()) {
+      toast.error("Post content cannot be empty");
+      return false;
+    }
+    if (!manualAccepting && !acceptingUntil) {
+      toast.error(
+        "Please set an 'Accepting Until' date or enable Manual Accepting"
+      );
+      return false;
+    }
+    if (!manualAccepting && new Date(acceptingUntil) <= new Date()) {
+      toast.error("'Accepting Until' date must be in the future");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validateForm()) return;
     if (!contract || !walletAddress) {
       toast.error("Please connect your wallet first");
       return;
     }
 
+    setIsSubmitting(true);
     try {
+      const name = showIdentity && session?.user?.name ? session.user.name : "";
+      const username =
+        showIdentity && session?.user?.name
+          ? session.user.name.replace(/\s+/g, "").toLowerCase()
+          : "";
+      const avatarUrl =
+        showIdentity && session?.user?.image ? session.user.image : "";
+
       const tx = await contract.createPost(
         feedContent,
         isPublic,
         manualAccepting,
-        !showIdentity, // Inverting showIdentity to match the contract's hideIdentity
-        "", // name (empty as it's not needed)
-        "", // username (empty as it's not needed)
-        "", // avatarUrl (empty as it's not needed)
+        !showIdentity,
+        name,
+        username,
+        avatarUrl,
         manualAccepting ? 0 : new Date(acceptingUntil).getTime() / 1000,
         { value: parseEther(estimatedCost) }
       );
+
+      toast.loading("Creating post...", { id: "create-post" });
       await tx.wait();
-      toast.success("Post created successfully");
+      toast.success("Post created successfully", { id: "create-post" });
       setFeedContent("");
+      setAcceptingUntil("");
     } catch (error) {
       console.error("Error creating post:", error);
-      toast.error("Error creating post. Please try again.");
+      toast.error("Error creating post. Please try again.", {
+        id: "create-post",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,6 +121,9 @@ export default function CreateFeedPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: feedContent }),
       });
+      if (!response.ok) {
+        throw new Error("AI assistance request failed");
+      }
       const data = await response.json();
       setFeedContent(
         (prevContent) =>
@@ -101,9 +144,6 @@ export default function CreateFeedPage() {
       transition={{ duration: 0.5 }}
     >
       <Card className="max-w-3xl mx-auto bg-white dark:bg-[#1e2837] text-gray-900 dark:text-white shadow-lg">
-        {/* <CardHeader>
-          <CardTitle className="text-2xl font-bold">Create New Post</CardTitle>
-        </CardHeader> */}
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <Alert className="bg-gray-100 dark:bg-[#2c3e50] border-gray-200 dark:border-[#34495e] mt-6">
@@ -150,7 +190,10 @@ export default function CreateFeedPage() {
                   size="sm"
                 >
                   {isAIAssistLoading ? (
-                    "Generating..."
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Generating...
+                    </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-1" />
@@ -277,8 +320,17 @@ export default function CreateFeedPage() {
           <Button
             type="submit"
             className="w-full bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-300"
+            disabled={isSubmitting}
+            onClick={(e) => handleSubmit(e as any)}
           >
-            Create Post
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating Post...
+              </>
+            ) : (
+              "Create Post"
+            )}
           </Button>
         </CardFooter>
       </Card>

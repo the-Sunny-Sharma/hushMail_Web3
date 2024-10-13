@@ -11,40 +11,170 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWallet } from "@/hooks/useWallet";
 import { motion } from "framer-motion";
 import { Key, Moon, Save, Sun, Trash2, Upload } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { walletAddress } = useWallet();
-  const [name, setName] = useState("John Doe");
-  const [username, setUsername] = useState("johndoe");
-  const [email, setEmail] = useState("john@example.com");
+  const { data: session, update } = useSession();
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [profilePicture, setProfilePicture] = useState("/placeholder-user.jpg");
   const [notifications, setNotifications] = useState({
-    email: true,
+    email: false,
     push: false,
   });
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleProfilePictureChange = (
+  useEffect(() => {
+    if (session?.user) {
+      setName(session.user.name || "");
+      setUsername(session.user.username || "");
+      setEmail(session.user.email || "");
+      setProfilePicture(session.user.image || "/placeholder-user.jpg");
+      setNotifications({
+        email: session.user.emailNotifications || false,
+        push: session.user.pushNotifications || false,
+      });
+    }
+  }, [session]);
+
+  const handleProfilePictureChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePicture(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await fetch("/api/upload-profile-picture", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setProfilePicture(data.imageUrl);
+          toast.success("Profile picture updated successfully");
+        } else {
+          toast.error("Failed to update profile picture");
+        }
+      } catch (error) {
+        console.error("Error uploading profile picture:", error);
+        toast.error("An error occurred while updating profile picture");
+      }
     }
   };
 
-  const handleSaveProfile = () => {
-    toast.success("Profile updated successfully");
+  const handleSaveProfile = async () => {
+    try {
+      const response = await fetch("/api/update-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, username, email, profilePicture }),
+      });
+
+      if (response.ok) {
+        await update();
+        toast.success("Profile updated successfully");
+      } else {
+        toast.error("Failed to update profile");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("An error occurred while updating profile");
+    }
   };
 
-  const handleDeleteAccount = () => {
-    toast.error("Account deletion is not implemented in this demo");
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      if (response.ok) {
+        toast.success("Password changed successfully");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error("Failed to change password");
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast.error("An error occurred while changing password");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete your account? This action cannot be undone."
+      )
+    ) {
+      try {
+        const response = await fetch("/api/delete-account", {
+          method: "POST",
+        });
+
+        if (response.ok) {
+          toast.success("Account deleted successfully");
+          signOut({ callbackUrl: "/" });
+        } else {
+          toast.error("Failed to delete account");
+        }
+      } catch (error) {
+        console.error("Error deleting account:", error);
+        toast.error("An error occurred while deleting account");
+      }
+    }
+  };
+
+  const handleNotificationChange = async (
+    type: "email" | "push",
+    checked: boolean
+  ) => {
+    try {
+      const response = await fetch("/api/update-notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ [type]: checked }),
+      });
+
+      if (response.ok) {
+        setNotifications((prev) => ({ ...prev, [type]: checked }));
+        toast.success(
+          `${type.charAt(0).toUpperCase() + type.slice(1)} notifications ${
+            checked ? "enabled" : "disabled"
+          }`
+        );
+      } else {
+        toast.error(`Failed to update ${type} notifications`);
+      }
+    } catch (error) {
+      console.error(`Error updating ${type} notifications:`, error);
+      toast.error(`An error occurred while updating ${type} notifications`);
+    }
   };
 
   return (
@@ -76,7 +206,6 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger
             value="appearance"
-            // className="data-[state=active]:bg-white dark:data-[state=active]:bg-[#34495e]"
             className="data-[state=active]:bg-white dark:data-[state=active]:bg-[#4c6984]"
           >
             Appearance
@@ -195,6 +324,8 @@ export default function SettingsPage() {
                 <Input
                   id="current-password"
                   type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
                   className="dark:bg-[#2c3e50] text-gray-900 dark:text-white border-gray-300 dark:border-[#34495e]"
                 />
@@ -209,6 +340,8 @@ export default function SettingsPage() {
                 <Input
                   id="new-password"
                   type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password"
                   className="dark:bg-[#2c3e50] text-gray-900 dark:text-white border-gray-300 dark:border-[#34495e]"
                 />
@@ -223,11 +356,16 @@ export default function SettingsPage() {
                 <Input
                   id="confirm-password"
                   type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
                   className="dark:bg-[#2c3e50] text-gray-900 dark:text-white border-gray-300 dark:border-[#34495e]"
                 />
               </div>
-              <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
+              <Button
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={handleChangePassword}
+              >
                 <Key className="w-4 h-4 mr-2" />
                 Change Password
               </Button>
@@ -267,7 +405,7 @@ export default function SettingsPage() {
                   id="email-notifications"
                   checked={notifications.email}
                   onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, email: checked })
+                    handleNotificationChange("email", checked)
                   }
                 />
               </div>
@@ -287,7 +425,7 @@ export default function SettingsPage() {
                   id="push-notifications"
                   checked={notifications.push}
                   onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, push: checked })
+                    handleNotificationChange("push", checked)
                   }
                 />
               </div>

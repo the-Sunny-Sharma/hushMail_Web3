@@ -4,28 +4,50 @@ import Navbar from "@/components/client/Navbar";
 import Sidebar from "@/components/client/Sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useWallet } from "@/hooks/useWallet";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { ContractProvider } from "@/context/ContractContext";
+import { WalletProvider } from "@/context/WalletContext";
 
 interface CurrentUser {
-  username: string;
+  name: string;
   profilePicture: string;
   walletAddress: string | null;
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { data: session } = useSession();
+
   const [currentUser, setCurrentUser] = useState<CurrentUser>({
-    username: "",
+    name: "",
     profilePicture:
       "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png",
     walletAddress: null,
   });
-  const { walletAddress, balance, loading, error, connectWallet, contract } =
-    useWallet();
+  const {
+    walletAddress,
+    balance,
+    loading,
+    error,
+    connectWallet,
+    disconnectWallet,
+    contract,
+  } = useWallet();
   const [copied, setCopied] = useState(false);
   const [walletProfilePicture, setWalletProfilePicture] = useState<
     string | null
   >(null);
+
+  useEffect(() => {
+    if (session?.user) {
+      setCurrentUser({
+        name: session.user.name || "Anonymous",
+        profilePicture: session.user.image || "/default-profile.png",
+        walletAddress: null,
+      });
+    }
+  }, [session]);
 
   useEffect(() => {
     const savedSidebarState = localStorage.getItem("sidebarOpen");
@@ -35,13 +57,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Simulating user authentication
-    // In a real app, you'd fetch this from your authentication service
-    setCurrentUser((prevUser) => ({
-      ...prevUser,
-      username: "demo@example.com",
-    }));
-  }, []);
+    if (walletAddress) {
+      fetchWalletProfilePicture(walletAddress).then(setWalletProfilePicture);
+      setCurrentUser((prevUser) => ({ ...prevUser, walletAddress }));
+    }
+  }, [walletAddress]);
 
   const toggleSidebar = () => {
     const newState = !isSidebarOpen;
@@ -49,26 +69,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     localStorage.setItem("sidebarOpen", JSON.stringify(newState));
   };
 
-  // Mock function to fetch wallet profile picture
   const fetchWalletProfilePicture = async (
     address: string
   ): Promise<string> => {
-    // In a real implementation, you would fetch the profile picture associated with the wallet address
-    // For now, we'll return a placeholder image
     return `https://api.dicebear.com/6.x/identicon/svg?seed=${address}`;
   };
 
   const handleConnectWallet = async () => {
     await connectWallet();
-
-    if (walletAddress) {
-      const profilePic = await fetchWalletProfilePicture(walletAddress);
-      setWalletProfilePicture(profilePic);
-      setCurrentUser((prevUser) => ({ ...prevUser, walletAddress }));
-    }
   };
 
-  const disconnectWallet = () => {
+  const handleDisconnectWallet = () => {
+    disconnectWallet();
     setWalletProfilePicture(null);
     setCurrentUser((prevUser) => ({ ...prevUser, walletAddress: null }));
   };
@@ -89,27 +101,44 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <div className="flex flex-col flex-grow overflow-hidden">
-          <Navbar
-            currentUser={currentUser}
-            connectWallet={handleConnectWallet}
-            walletAddress={walletAddress}
-            balance={balance}
-            loading={loading}
-            walletProfilePicture={walletProfilePicture}
-            disconnectWallet={disconnectWallet}
-            copyAddress={copyAddress}
-            openEtherscan={openEtherscan}
-            copied={copied}
-            error={error}
-          />
-          <main className="flex-grow overflow-auto p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-            {children}
-          </main>
-        </div>
-      </div>
+      <WalletProvider
+        value={{
+          walletAddress,
+          balance,
+          loading,
+          error,
+          connectWallet: handleConnectWallet,
+          disconnectWallet: handleDisconnectWallet,
+          contract,
+        }}
+      >
+        <ContractProvider contract={contract}>
+          <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+            <Sidebar
+              isSidebarOpen={isSidebarOpen}
+              toggleSidebar={toggleSidebar}
+            />
+            <div className="flex flex-col flex-grow overflow-hidden">
+              <Navbar
+                currentUser={currentUser}
+                connectWallet={handleConnectWallet}
+                walletAddress={walletAddress}
+                balance={balance}
+                loading={loading}
+                walletProfilePicture={walletProfilePicture}
+                disconnectWallet={handleDisconnectWallet}
+                copyAddress={copyAddress}
+                openEtherscan={openEtherscan}
+                copied={copied}
+                error={error}
+              />
+              <main className="flex-grow overflow-auto p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+                {children}
+              </main>
+            </div>
+          </div>
+        </ContractProvider>
+      </WalletProvider>
     </ThemeProvider>
   );
 }

@@ -27,7 +27,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 
 interface CurrentUser {
-  username: string;
+  name: string;
   profilePicture: string;
   walletAddress: string | null;
 }
@@ -67,11 +67,11 @@ export default function Navbar({
     "/dashboard": "Dashboard",
     "/create-post": "Create Post",
     "/settings": "Settings",
+    // "/posts/": "Post Details",
   };
 
   const title =
-    titles[pathname] ||
-    (pathname.startsWith("/h/publicPost") && "Post Details");
+    titles[pathname] || (pathname.startsWith("/posts") && "Post Details");
 
   return (
     <header className="sticky top-0 bg-white dark:bg-gray-800 shadow-sm z-40">
@@ -219,7 +219,7 @@ export default function Navbar({
                 </motion.div>
               )}
             </AnimatePresence>
-            <span className="text-sm font-medium">{currentUser.username}</span>
+            <span className="text-sm font-medium">{currentUser.name}</span>
             <Image
               src={currentUser.profilePicture}
               alt="User profile"

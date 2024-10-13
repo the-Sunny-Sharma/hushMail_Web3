@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Script from "next/script";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "Next.js",
@@ -21,12 +22,14 @@ export default function RootLayout({
         <Script src="/theme-script.js" strategy="beforeInteractive" />
       </head>
       <body>
-        <AuthProvider>
-          <ThemeProvider>
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );
