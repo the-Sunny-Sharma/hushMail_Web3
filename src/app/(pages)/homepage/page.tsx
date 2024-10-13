@@ -119,7 +119,7 @@ export default function HomePage() {
             identity: {
               ...post.identity,
               avatarUrl:
-                post.identity.avatarUrl || "/placeholder-anonymous.jpg",
+                post.identity.avatarUrl || "/default-profile-picture.jpg",
               username: post.identity.username || "Anonymous",
             },
           };

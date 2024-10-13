@@ -73,7 +73,7 @@ export function PostsList({ posts, isLoading }: PostsListProps) {
   };
 
   const handleShare = (postId: string) => {
-    const url = `${window.location.origin}/h/publicPost/${postId}`;
+    const url = `${window.location.origin}/posts/${postId}`;
     navigator.clipboard.writeText(url);
     toast({
       title: "Link copied!",

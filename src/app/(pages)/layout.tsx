@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { ContractProvider } from "@/context/ContractContext";
 import { WalletProvider } from "@/context/WalletContext";
+import { Toaster } from "@/components/ui/toaster";
 
 interface CurrentUser {
   name: string;
@@ -134,6 +135,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               />
               <main className="flex-grow overflow-auto p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
                 {children}
+                <Toaster />
               </main>
             </div>
           </div>
