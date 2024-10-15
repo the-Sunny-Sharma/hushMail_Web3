@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
+import axios from "axios";
 import {
   Clock,
   MessageCircle,
   Sparkles,
   User,
   UserX,
-  ThumbsUp,
   Share2,
   Edit,
   Trash2,
@@ -378,27 +378,60 @@ export default function PostDetails({
     }
   };
 
+  // const handleAIAssist = async () => {
+  //   setIsAIAssistLoading(true);
+  //   try {
+  //     const response = await fetch("/api/ai-assist", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ prompt: newResponse }),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("AI assistance request failed");
+  //     }
+  //     const data = await response.json();
+  //     setNewResponse(
+  //       (prevContent) =>
+  //         prevContent + (prevContent ? "\n\n" : "") + data.suggestion
+  //     );
+  //   } catch (error) {
+  //     console.error("Error getting AI assistance:", error);
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to generate AI response. Please try again.",
+  //     });
+  //   } finally {
+  //     setIsAIAssistLoading(false);
+  //   }
+  // };
   const handleAIAssist = async () => {
+    if (!post) return;
+
     setIsAIAssistLoading(true);
     try {
-      const response = await fetch("/api/ai-assist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: newResponse }),
+      const response = await axios.post("/api/ai-assist-response", {
+        postContent: post.content,
+        userResponse: newResponse,
       });
-      if (!response.ok) {
-        throw new Error("AI assistance request failed");
-      }
-      const data = await response.json();
-      setNewResponse(
-        (prevContent) =>
-          prevContent + (prevContent ? "\n\n" : "") + data.suggestion
+
+      const updatedContent =
+        newResponse + (newResponse ? "\n\n" : "") + response.data.suggestion;
+      setNewResponse(updatedContent);
+      setCharacterCount(updatedContent.length);
+      setEstimatedCost(
+        (0.001 + (updatedContent.length / 1000) * 0.0001).toFixed(6)
       );
+
+      toast({
+        title: "AI Suggestion Added",
+        description: "The AI-generated response has been added to your reply.",
+      });
     } catch (error) {
       console.error("Error getting AI assistance:", error);
       toast({
         title: "Error",
         description: "Failed to generate AI response. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsAIAssistLoading(false);

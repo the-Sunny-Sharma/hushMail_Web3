@@ -162,7 +162,9 @@ export default function LandingPage() {
             <DropdownMenu>
               <DropdownMenuTrigger>
                 <Avatar>
-                  <AvatarImage src={session.user?.image || undefined} />
+                  <AvatarImage
+                    src={session.user?.image || "/default-profile-picture.jpg"}
+                  />
                   <AvatarFallback>
                     {session.user?.name?.charAt(0) || "U"}
                   </AvatarFallback>

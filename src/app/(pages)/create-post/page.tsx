@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 // import { useWallet } from "@/hooks/useWallet";
+import axios from "axios";
 import {
   Globe,
   Lock,
@@ -113,25 +114,47 @@ export default function CreateFeedPage() {
     }
   };
 
+  // const handleAIAssist = async () => {
+  //   setIsAIAssistLoading(true);
+  //   try {
+  //     const response = await fetch("/api/ai-assist", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ prompt: feedContent }),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("AI assistance request failed");
+  //     }
+  //     const data = await response.json();
+  //     setFeedContent(
+  //       (prevContent) =>
+  //         prevContent + (prevContent ? "\n\n" : "") + data.suggestion
+  //     );
+  //   } catch (error) {
+  //     console.error("Error getting AI assistance:", error);
+  //     toast.error("Error while communicating with AI");
+  //   } finally {
+  //     setIsAIAssistLoading(false);
+  //   }
+  // };
+
   const handleAIAssist = async () => {
     setIsAIAssistLoading(true);
     try {
-      const response = await fetch("/api/ai-assist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: feedContent }),
+      const response = await axios.post("/api/ai-assist-post", {
+        content: feedContent,
       });
-      if (!response.ok) {
-        throw new Error("AI assistance request failed");
-      }
-      const data = await response.json();
-      setFeedContent(
-        (prevContent) =>
-          prevContent + (prevContent ? "\n\n" : "") + data.suggestion
+      const newContent =
+        feedContent + (feedContent ? "\n\n" : "") + response.data.suggestion;
+      setFeedContent(newContent);
+      setCharacterCount(newContent.length);
+      setEstimatedCost(
+        (0.001 + (newContent.length / 1000) * 0.0001).toFixed(7)
       );
+      toast.success("AI suggestion added successfully");
     } catch (error) {
       console.error("Error getting AI assistance:", error);
-      toast.error("Error while communicating with AI");
+      toast.error("Failed to generate AI response. Please try again.");
     } finally {
       setIsAIAssistLoading(false);
     }

@@ -221,7 +221,7 @@ export default function Navbar({
             </AnimatePresence>
             <span className="text-sm font-medium">{currentUser.name}</span>
             <Image
-              src={currentUser.profilePicture}
+              src={currentUser.profilePicture ?? "/default-profile-picture.jpg"}
               alt="User profile"
               width={32}
               height={32}
