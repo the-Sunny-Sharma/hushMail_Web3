@@ -186,7 +186,7 @@ export default function PostDetails({
       }
     };
     fetchPostAndResponses();
-  }, [contract, params.postId, toast, router]);
+  }, [contract, params.paramsPostId, toast, router]);
 
   useEffect(() => {
     setCharacterCount(newResponse.length);
@@ -218,7 +218,7 @@ export default function PostDetails({
         !isAnonymous && session?.user?.image ? session.user.image : "";
 
       const tx = await contract.respondToPost(
-        params.postId[0],
+        params.paramsPostId,
         newResponse,
         isAnonymous,
         name,
@@ -235,7 +235,7 @@ export default function PostDetails({
       });
       // Refresh responses
       const updatedResponses = await contract.getPostResponses(
-        params.postId[0]
+        params.paramsPostId
       );
       setResponses(
         updatedResponses.map((response: any) => ({
@@ -284,7 +284,7 @@ export default function PostDetails({
       });
       setIsEditing(false);
       // Refresh post data
-      const updatedPost = await contract.posts(params.postId[0]);
+      const updatedPost = await contract.posts(params.paramsPostId);
       setPost({
         postId: updatedPost.postId.toString(),
         content: updatedPost.content,
