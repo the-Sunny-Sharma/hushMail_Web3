@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { DashboardStats } from "./_components/DashboardStats";
@@ -11,7 +11,6 @@ import { useWalletContext } from "@/context/WalletContext";
 import { formatEther } from "ethers";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 
 export default function Dashboard() {
   const { contract, walletAddress } = useWalletContext();
@@ -107,7 +106,7 @@ export default function Dashboard() {
   }, [contract, walletAddress]);
 
   return (
-    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -124,10 +123,10 @@ export default function Dashboard() {
       </motion.div>
 
       <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold">Your Posts</h2>
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-4">
+          <h2 className="text-2xl font-semibold mb-4 sm:mb-0">Your Posts</h2>
           <Link href="/create-post">
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="w-5 h-5 mr-2" />
               Create New Post
             </Button>
@@ -145,8 +144,8 @@ export default function Dashboard() {
               You haven't created any posts yet. Start sharing your thoughts and
               earning rewards!
             </p>
-            <Link href="/h/create-feed">
-              <Button size="lg">
+            <Link href="/create-post">
+              <Button size="lg" className="w-full sm:w-auto">
                 <Plus className="w-5 h-5 mr-2" />
                 Create Your First Post
               </Button>

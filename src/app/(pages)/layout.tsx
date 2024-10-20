@@ -4,7 +4,7 @@ import Navbar from "@/components/client/Navbar";
 import Sidebar from "@/components/client/Sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useWallet } from "@/hooks/useWallet";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { ContractProvider } from "@/context/ContractContext";
 import { WalletProvider } from "@/context/WalletContext";
@@ -44,7 +44,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (session?.user) {
       setCurrentUser({
         name: session.user.name || "Anonymous",
-        profilePicture: session.user.image || "/default-profile.png",
+        profilePicture:
+          session.user.image ||
+          "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg",
         walletAddress: null,
       });
     }
@@ -100,6 +102,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleLogout = async () => {
+    await signOut();
+    handleDisconnectWallet();
+  };
+
   return (
     <ThemeProvider>
       <WalletProvider
@@ -114,30 +121,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }}
       >
         <ContractProvider contract={contract}>
-          <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-            <Sidebar
-              isSidebarOpen={isSidebarOpen}
+          <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
+            <Navbar
+              currentUser={currentUser}
+              connectWallet={handleConnectWallet}
+              walletAddress={walletAddress}
+              balance={balance}
+              loading={loading}
+              walletProfilePicture={walletProfilePicture}
+              disconnectWallet={handleDisconnectWallet}
+              copyAddress={copyAddress}
+              openEtherscan={openEtherscan}
+              copied={copied}
+              error={error}
               toggleSidebar={toggleSidebar}
+              logout={handleLogout}
             />
-            <div className="flex flex-col flex-grow overflow-hidden">
-              <Navbar
-                currentUser={currentUser}
-                connectWallet={handleConnectWallet}
-                walletAddress={walletAddress}
-                balance={balance}
-                loading={loading}
-                walletProfilePicture={walletProfilePicture}
-                disconnectWallet={handleDisconnectWallet}
-                copyAddress={copyAddress}
-                openEtherscan={openEtherscan}
-                copied={copied}
-                error={error}
+            <div className="flex flex-1 overflow-hidden">
+              <Sidebar
+                isSidebarOpen={isSidebarOpen}
+                toggleSidebar={toggleSidebar}
               />
-              <main className="flex-grow overflow-auto p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+              <main className="flex-1 overflow-auto p-4 md:p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
                 {children}
-                <Toaster />
               </main>
             </div>
+            <Toaster />
           </div>
         </ContractProvider>
       </WalletProvider>

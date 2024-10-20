@@ -45,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Post {
   postId: string;
@@ -74,7 +75,10 @@ export default function HomePage() {
   const [filter, setFilter] = useState("recent");
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [ref, inView] = useInView();
+  const [ref, inView] = useInView({
+    threshold: 0,
+    rootMargin: "400px",
+  });
 
   const fetchPosts = useCallback(async () => {
     if (!contract) {
@@ -106,24 +110,21 @@ export default function HomePage() {
 
       const formattedPosts = fetchedPosts
         .filter((post: Post) => post.isPublic && post.content !== "") // Filter out private and deleted posts
-        .map((post: Post) => {
-          console.log("Formatting post:", post);
-          return {
-            ...post,
-            postId: post.postId.toString(),
-            content: post.content || "",
-            totalEarnings: formatEther(post.totalEarnings),
-            creationTime: Number(post.creationTime) * 1000,
-            acceptingUntil: Number(post.acceptingUntil) * 1000,
-            totalResponses: Number(post.totalResponses),
-            identity: {
-              ...post.identity,
-              avatarUrl:
-                post.identity.avatarUrl || "/default-profile-picture.jpg",
-              username: post.identity.username || "Anonymous",
-            },
-          };
-        });
+        .map((post: Post) => ({
+          ...post,
+          postId: post.postId.toString(),
+          content: post.content || "",
+          totalEarnings: formatEther(post.totalEarnings),
+          creationTime: Number(post.creationTime) * 1000,
+          acceptingUntil: Number(post.acceptingUntil) * 1000,
+          totalResponses: Number(post.totalResponses),
+          identity: {
+            ...post.identity,
+            avatarUrl:
+              post.identity.avatarUrl || "/default-profile-picture.jpg",
+            username: post.identity.username || "Anonymous",
+          },
+        }));
 
       console.log("Formatted posts:", formattedPosts);
 
@@ -173,7 +174,6 @@ export default function HomePage() {
           post.identity.username.toLowerCase().includes(lowercaseSearchTerm)
       );
 
-      // Sort posts by relevance (number of matches)
       filteredPosts.sort((a, b) => {
         const aMatches =
           (
@@ -255,15 +255,26 @@ export default function HomePage() {
     return content.slice(0, maxLength) + "...";
   };
 
-  const [shareClicked, setShareClicked] = useState<string | null>(null);
-
-  const handleShareClick = (postId: string) => {
-    setShareClicked(postId);
-    copyToClipboard(`${window.location.origin}/h/publicPost/${postId}`);
-    setTimeout(() => setShareClicked(null), 500); // Reset after animation
-  };
-
   const filteredPosts = filterAndSortPosts();
+
+  const PostSkeleton = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 space-y-4">
+      <div className="flex items-center space-x-3">
+        <Skeleton className="w-10 h-10 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      </div>
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
@@ -302,13 +313,6 @@ export default function HomePage() {
             </AlertDescription>
           </Alert>
         )}
-        {/* {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )} */}
         <div className="grid gap-6 md:grid-cols-2">
           <AnimatePresence>
             {filteredPosts.map((post, index) => (
@@ -386,7 +390,7 @@ export default function HomePage() {
                           className="p-1"
                           onClick={() =>
                             copyToClipboard(
-                              `${window.location.origin}/h/publicPost/${post.postId}`
+                              `${window.location.origin}/posts/${post.postId}`
                             )
                           }
                         >
@@ -402,7 +406,7 @@ export default function HomePage() {
                             <DropdownMenuItem
                               onClick={() =>
                                 copyToClipboard(
-                                  `${window.location.origin}/h/publicPost/${post.postId}`
+                                  `${window.location.origin}/posts/${post.postId}`
                                 )
                               }
                             >
@@ -432,15 +436,19 @@ export default function HomePage() {
             ))}
           </AnimatePresence>
         </div>
-        {loading && <p className="text-center mt-4">Loading posts...</p>}
+        {loading && (
+          <div className="grid gap-6 md:grid-cols-2 mt-6">
+            {[...Array(4)].map((_, index) => (
+              <PostSkeleton key={index} />
+            ))}
+          </div>
+        )}
         {!loading && filteredPosts.length === 0 && (
           <p className="text-center mt-4">No posts found.</p>
         )}
-        {!loading && hasMore && (
-          <div ref={ref} className="flex justify-center mt-8">
-            <Button onClick={fetchPosts} className="px-4 py-2">
-              Load More
-            </Button>
+        {hasMore && (
+          <div ref={ref} className="h-20 flex items-center justify-center">
+            {loading && <p>Loading more posts...</p>}
           </div>
         )}
         {!loading && !hasMore && posts.length > 0 && (

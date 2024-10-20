@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -89,7 +90,7 @@ interface Response {
 export default function PostDetails({
   params,
 }: {
-  params: { postId: string[] };
+  params: { paramsPostId: string };
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -115,8 +116,22 @@ export default function PostDetails({
       if (!contract) return;
 
       try {
-        const postId = params.postId[0];
+        const postId = params.paramsPostId;
+        console.log("Fetching post with ID:", postId);
         const fetchedPost = await contract.posts(postId);
+        console.log("Fetched post:", fetchedPost);
+
+        if (!fetchedPost || fetchedPost.postId.toString() === "0") {
+          console.error("Post not found");
+          toast({
+            title: "Error",
+            description: "Post not found. It may have been deleted.",
+            variant: "destructive",
+          });
+          router.push("/");
+          return;
+        }
+
         setPost({
           postId: fetchedPost.postId.toString(),
           content: fetchedPost.content,
@@ -133,6 +148,15 @@ export default function PostDetails({
             avatarUrl: fetchedPost.identity.avatarUrl || "",
           },
         });
+
+        setEditedContent(fetchedPost.content);
+        setEditedIsPublic(fetchedPost.isPublic);
+        setEditedManualAccepting(fetchedPost.manualAcceting);
+        setEditedAcceptingUntil(
+          new Date(Number(fetchedPost.acceptingUntil) * 1000)
+            .toISOString()
+            .slice(0, 16)
+        );
 
         const fetchedResponses = await contract.getPostResponses(postId);
         setResponses(
@@ -161,13 +185,11 @@ export default function PostDetails({
         });
       }
     };
-
     fetchPostAndResponses();
-  }, [contract, params.postId, toast]);
+  }, [contract, params.postId, toast, router]);
 
   useEffect(() => {
     setCharacterCount(newResponse.length);
-    // Update estimated cost based on response length and Ethereum amount
     const baseCost = 0;
     const lengthCost = (newResponse.length / 1000) * 0.0001;
     const ethAmount = parseFloat(responseAmount) || 0;
@@ -242,74 +264,6 @@ export default function PostDetails({
     }
   };
 
-  // const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-  //   if (!contract || !walletAddress) {
-  //     toast({
-  //       title: "Error",
-  //       description: "Please connect your wallet to submit a response.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-
-  //   setIsSubmitting(true);
-  //   try {
-  //     const name = !isAnonymous && session?.user?.name ? session.user.name : "";
-  //     const username =
-  //       !isAnonymous && session?.user?.name
-  //         ? session.user.name.replace(/\s+/g, "").toLowerCase()
-  //         : "";
-  //     const avatarUrl =
-  //       !isAnonymous && session?.user?.image ? session.user.image : "";
-
-  //     const tx = await contract.respondToPost(
-  //       params.postId[0],
-  //       newResponse,
-  //       isAnonymous,
-  //       name,
-  //       username,
-  //       avatarUrl,
-  //       { value: parseEther(estimatedCost) }
-  //     );
-  //     await tx.wait();
-  //     setNewResponse("");
-  //     setResponseAmount("");
-  //     toast({
-  //       title: "Success",
-  //       description: "Your response has been submitted successfully!",
-  //     });
-  //     // Refresh responses
-  //     const updatedResponses = await contract.getPostResponses(
-  //       params.postId[0]
-  //     );
-  //     setResponses(
-  //       updatedResponses.map((response: any) => ({
-  //         refPostId: response.refPostId.toString(),
-  //         responseId: response.responseId.toString(),
-  //         responder: response.responder,
-  //         content: response.content,
-  //         amountTransferredInWei: formatEther(response.amountTransferredInWei),
-  //         creationTime: Number(response.creationTime) * 1000,
-  //         identity: {
-  //           name: response.identity.name || "",
-  //           username: response.identity.username || "",
-  //           avatarUrl: response.identity.avatarUrl || "",
-  //         },
-  //       }))
-  //     );
-  //   } catch (error) {
-  //     console.error("Error submitting response:", error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to submit response. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
-
   const handleEdit = async () => {
     if (!contract || !walletAddress || !post) return;
 
@@ -378,32 +332,6 @@ export default function PostDetails({
     }
   };
 
-  // const handleAIAssist = async () => {
-  //   setIsAIAssistLoading(true);
-  //   try {
-  //     const response = await fetch("/api/ai-assist", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ prompt: newResponse }),
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error("AI assistance request failed");
-  //     }
-  //     const data = await response.json();
-  //     setNewResponse(
-  //       (prevContent) =>
-  //         prevContent + (prevContent ? "\n\n" : "") + data.suggestion
-  //     );
-  //   } catch (error) {
-  //     console.error("Error getting AI assistance:", error);
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to generate AI response. Please try again.",
-  //     });
-  //   } finally {
-  //     setIsAIAssistLoading(false);
-  //   }
-  // };
   const handleAIAssist = async () => {
     if (!post) return;
 
@@ -493,7 +421,7 @@ export default function PostDetails({
         <CardContent>
           <p className="text-lg">{post.content}</p>
         </CardContent>
-        <CardFooter className="flex justify-between items-center">
+        <CardFooter className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-4">
             <span className="flex items-center">
               <MessageCircle className="w-5 h-5 mr-1" />
@@ -528,8 +456,6 @@ export default function PostDetails({
                         Are you sure you want to delete this post?
                       </DialogTitle>
                       <DialogDescription>
-                        {/* This action cannot be undone. This will permanently
-                        delete your post and no money will be refunded. */}
                         This action is permanent and cannot be undone. Once
                         deleted, your post will be removed from our platform,
                         and no refund will be issued. Please double-check your
@@ -577,286 +503,214 @@ export default function PostDetails({
             <CardTitle>Edit Post</CardTitle>
           </CardHeader>
           <CardContent>
-            <Textarea
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              placeholder="Edit your post content..."
-              className="mb-4 dark:bg-[#2c3e50] text-gray-900 dark:text-white border-gray-300 dark:border-[#34495e] focus:border-blue-500 dark:focus:border-[#3498db]"
-            />
-            <div className="flex items-center space-x-4 mb-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="editedIsPublic"
-                        checked={editedIsPublic}
-                        onCheckedChange={setEditedIsPublic}
-                      />
-                      <Label
-                        htmlFor="editedIsPublic"
-                        className="flex items-center cursor-pointer"
-                      >
-                        {editedIsPublic ? (
-                          <Globe className="w-4 h-4 mr-1" />
-                        ) : (
-                          <Lock className="w-4 h-4 mr-1" />
-                        )}
-                        {editedIsPublic ? "Public" : "Private"}
-                      </Label>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {editedIsPublic
-                      ? "Your post will be visible to everyone"
-                      : "Your post will be private"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="space-y-2">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="editedContent">Content</Label>
+                <Textarea
+                  id="editedContent"
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="editedIsPublic"
+                  checked={editedIsPublic}
+                  onCheckedChange={setEditedIsPublic}
+                />
+                <Label htmlFor="editedIsPublic">
+                  {editedIsPublic ? (
+                    <Globe className="w-4 h-4 inline-block mr-1" />
+                  ) : (
+                    <Lock className="w-4 h-4 inline-block mr-1" />
+                  )}
+                  {editedIsPublic ? "Public" : "Private"}
+                </Label>
+              </div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="editedManualAccepting"
                   checked={editedManualAccepting}
                   onCheckedChange={setEditedManualAccepting}
                 />
-                <Label
-                  htmlFor="editedManualAccepting"
-                  className="cursor-pointer"
-                >
-                  Manual Accepting
-                </Label>
+                <Label htmlFor="editedManualAccepting">Manual Accepting</Label>
               </div>
-              <AnimatePresence>
-                {!editedManualAccepting && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Label
-                      htmlFor="editedAcceptingUntil"
-                      className="text-gray-700 dark:text-gray-300"
-                    >
-                      Accepting Until
-                    </Label>
-                    <Input
-                      id="editedAcceptingUntil"
-                      type="datetime-local"
-                      value={editedAcceptingUntil}
-                      onChange={(e) => setEditedAcceptingUntil(e.target.value)}
-                      min={new Date().toISOString().slice(0, 16)}
-                      required={!editedManualAccepting}
-                      className="w-full dark:bg-[#2c3e50] text-gray-900 dark:text-white border-gray-300 dark:border-[#34495e] focus:border-blue-500 dark:focus:border-[#3498db]"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              {!editedManualAccepting && (
+                <div className="space-y-2">
+                  <Label htmlFor="editedAcceptingUntil">Accepting Until</Label>
+                  <Input
+                    id="editedAcceptingUntil"
+                    type="datetime-local"
+                    value={editedAcceptingUntil}
+                    onChange={(e) => setEditedAcceptingUntil(e.target.value)}
+                  />
+                </div>
+              )}
+            </form>
           </CardContent>
-          <CardFooter>
-            <Button
-              onClick={handleEdit}
-              className="mr-2 bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              Save Changes
-            </Button>
+          <CardFooter className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setIsEditing(false)}>
               Cancel
             </Button>
+            <Button onClick={handleEdit}>Save Changes</Button>
           </CardFooter>
         </Card>
       )}
 
-      <Card className="mb-8 bg-white dark:bg-[#1e2837] text-gray-900 dark:text-white shadow-lg">
+      <Card className="mt-8 bg-white dark:bg-[#1e2837] text-gray-900 dark:text-white shadow-lg">
         <CardHeader>
-          <CardTitle>Submit Your Response</CardTitle>
+          <CardTitle>Add Your Response</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <Alert className="mb-4 bg-gray-100 dark:bg-[#2c3e50] border-gray-200 dark:border-[#34495e]">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Note</AlertTitle>
-              <AlertDescription>
-                Submitting a response will incur a platform fee of 0.5% of the
-                total Ether sent, with the remainder sent directly to the post
-                owner.
-              </AlertDescription>
-            </Alert>
-            <div className="mb-4">
-              <Textarea
-                placeholder="Type your response here..."
-                value={newResponse}
-                onChange={(e) => setNewResponse(e.target.value)}
-                rows={4}
-                className="w-full dark:bg-[#2c3e50] text-gray-900 dark:text-white border-gray-300 dark:border-[#34495e] focus:border-blue-500 dark:focus:border-[#3498db]"
-              />
-              <AnimatePresence>
-                {newResponse && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="mt-2 text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    {characterCount} characters
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newResponse">Your Response</Label>
+              <div className="relative">
+                <Textarea
+                  id="newResponse"
+                  value={newResponse}
+                  onChange={(e) => setNewResponse(e.target.value)}
+                  placeholder="Type your response here..."
+                  className="min-h-[100px]"
+                />
+                <AnimatePresence>
+                  {newResponse && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute bottom-2 left-2 text-sm text-gray-500 dark:text-gray-400"
+                    >
+                      {characterCount} characters
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <Button
+                  type="button"
+                  onClick={handleAIAssist}
+                  disabled={isAIAssistLoading}
+                  className="absolute bottom-2 right-2 bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-300"
+                  size="sm"
+                >
+                  {isAIAssistLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      AI Assist
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-            <div className="mb-4">
-              <Label htmlFor="responseAmount" className="block mb-2">
-                Ethereum Amount
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="responseAmount">Amount (ETH)</Label>
               <Input
                 id="responseAmount"
                 type="number"
-                step="0.000001"
+                step="0.001"
                 min="0"
                 value={responseAmount}
                 onChange={(e) => setResponseAmount(e.target.value)}
-                placeholder="Enter ETH amount"
-                className="w-full dark:bg-[#2c3e50] text-gray-900 dark:text-white border-gray-300 dark:border-[#34495e] focus:border-blue-500 dark:focus:border-[#3498db]"
+                placeholder="0.001"
               />
             </div>
-            <div className="flex items-center justify-between mb-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="isAnonymous"
-                        checked={isAnonymous}
-                        onCheckedChange={setIsAnonymous}
-                      />
-                      <Label
-                        htmlFor="isAnonymous"
-                        className="flex items-center cursor-pointer"
-                      >
-                        {isAnonymous ? (
-                          <UserX className="w-4 h-4 mr-1" />
-                        ) : (
-                          <User className="w-4 h-4 mr-1" />
-                        )}
-                        {isAnonymous ? "Anonymous" : "Show Identity"}
-                      </Label>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isAnonymous
-                      ? "Your identity will be hidden"
-                      : "Your identity will be shown"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button
-                type="button"
-                onClick={handleAIAssist}
-                disabled={isAIAssistLoading}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-                size="sm"
-              >
-                {isAIAssistLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                    Generating...
-                  </>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isAnonymous"
+                checked={isAnonymous}
+                onCheckedChange={setIsAnonymous}
+              />
+              <Label htmlFor="isAnonymous">
+                {isAnonymous ? (
+                  <UserX className="w-4 h-4 inline-block mr-1" />
                 ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    AI Assist
-                  </>
+                  <User className="w-4 h-4 inline-block mr-1" />
                 )}
-              </Button>
+                {isAnonymous ? "Anonymous" : "Show Identity"}
+              </Label>
             </div>
-            <div className="flex justify-between w-full text-sm mb-4">
-              <span className="flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
-                Estimated processing time: ~30 seconds
-              </span>
-              <span className="flex items-center">
-                <DollarSign className="w-4 h-4 mr-1" />
-                Estimated cost: {estimatedCost} ETH
-              </span>
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Response"
-              )}
-            </Button>
+            <Alert className="bg-gray-100 dark:bg-[#2c3e50] border-gray-200 dark:border-[#34495e]">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Note</AlertTitle>
+              <AlertDescription>
+                Submitting a response will cost at least {estimatedCost} ETH.
+              </AlertDescription>
+            </Alert>
           </form>
         </CardContent>
+        <CardFooter>
+          <Button
+            type="submit"
+            onClick={(e) => handleSubmit(e as any)}
+            disabled={isSubmitting}
+            className="w-full"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Response"
+            )}
+          </Button>
+        </CardFooter>
       </Card>
 
-      <Card className="bg-white dark:bg-[#1e2837] text-gray-900 dark:text-white shadow-lg">
-        <CardHeader>
-          <CardTitle>Previous Responses</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AnimatePresence>
-            {responses.length === 0 ? (
-              <p className="text-center text-muted-foreground">
-                No responses yet.
-              </p>
-            ) : (
-              responses.map((response, index) => (
-                <motion.div
-                  key={response.responseId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="mb-6 last:mb-0"
-                >
-                  <div className="flex items-center space-x-4 mb-2">
-                    <Avatar>
-                      <AvatarImage
-                        src={response.identity.avatarUrl}
-                        alt={response.identity.username}
-                      />
-                      <AvatarFallback>
-                        {response.identity.username
-                          ? response.identity.username.charAt(0)
-                          : "A"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">
-                        {response.identity.username || "Anonymous"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        <Clock className="inline-block w-4 h-4 mr-1" />
-                        {formatDistanceToNow(response.creationTime, {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
-                    {Number(response.amountTransferredInWei) > 0 && (
-                      <span className="text-sm text-green-600 dark:text-green-400">
-                        Tipped {response.amountTransferredInWei} ETH
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {response.content}
+      <h2 className="text-2xl font-bold mb-4">Responses</h2>
+      {responses.length === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400">
+          No responses yet. Be the first to respond!
+        </p>
+      ) : (
+        responses.map((response) => (
+          <Card
+            key={response.responseId}
+            className="mb-4 bg-white dark:bg-[#1e2837] text-gray-900 dark:text-white shadow-lg"
+          >
+            <CardHeader>
+              <div className="flex items-center space-x-4">
+                <Avatar>
+                  <AvatarImage
+                    src={response.identity.avatarUrl}
+                    alt={response.identity.username}
+                  />
+                  <AvatarFallback>
+                    {response.identity.username
+                      ? response.identity.username.charAt(0)
+                      : "A"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle>
+                    {response.identity.username || "Anonymous"}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    <Clock className="inline-block w-4 h-4 mr-1" />
+                    {formatDistanceToNow(response.creationTime, {
+                      addSuffix: true,
+                    })}
                   </p>
-                </motion.div>
-              ))
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p>{response.content}</p>
+            </CardContent>
+            <CardFooter>
+              <p className="text-sm text-muted-foreground">
+                <DollarSign className="inline-block w-4 h-4 mr-1" />
+                Paid {response.amountTransferredInWei} ETH
+              </p>
+            </CardFooter>
+          </Card>
+        ))
+      )}
     </div>
   );
 }

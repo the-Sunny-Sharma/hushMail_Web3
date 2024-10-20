@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// import { useWallet } from "@/hooks/useWallet";
 import axios from "axios";
 import {
   Globe,
@@ -33,7 +32,6 @@ import { useSession } from "next-auth/react";
 import { useWalletContext } from "@/context/WalletContext";
 
 export default function CreateFeedPage() {
-  // const { walletAddress, contract } = useWallet();
   const { walletAddress, contract } = useWalletContext();
   const { data: session } = useSession();
   const [feedContent, setFeedContent] = useState("");
@@ -114,30 +112,6 @@ export default function CreateFeedPage() {
     }
   };
 
-  // const handleAIAssist = async () => {
-  //   setIsAIAssistLoading(true);
-  //   try {
-  //     const response = await fetch("/api/ai-assist", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ prompt: feedContent }),
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error("AI assistance request failed");
-  //     }
-  //     const data = await response.json();
-  //     setFeedContent(
-  //       (prevContent) =>
-  //         prevContent + (prevContent ? "\n\n" : "") + data.suggestion
-  //     );
-  //   } catch (error) {
-  //     console.error("Error getting AI assistance:", error);
-  //     toast.error("Error while communicating with AI");
-  //   } finally {
-  //     setIsAIAssistLoading(false);
-  //   }
-  // };
-
   const handleAIAssist = async () => {
     setIsAIAssistLoading(true);
     try {
@@ -165,11 +139,12 @@ export default function CreateFeedPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      className="container mx-auto px-4 py-8 max-w-3xl"
     >
-      <Card className="max-w-3xl mx-auto bg-white dark:bg-[#1e2837] text-gray-900 dark:text-white shadow-lg">
-        <CardContent>
+      <Card className="bg-white dark:bg-[#1e2837] text-gray-900 dark:text-white shadow-lg">
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <Alert className="bg-gray-100 dark:bg-[#2c3e50] border-gray-200 dark:border-[#34495e] mt-6">
+            <Alert className="bg-gray-100 dark:bg-[#2c3e50] border-gray-200 dark:border-[#34495e]">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Note</AlertTitle>
               <AlertDescription>
@@ -329,8 +304,8 @@ export default function CreateFeedPage() {
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="flex justify-between w-full text-sm">
+        <CardFooter className="flex flex-col space-y-4 p-6">
+          <div className="flex flex-col sm:flex-row justify-between w-full text-sm space-y-2 sm:space-y-0">
             <span className="flex items-center">
               <Clock className="w-4 h-4 mr-1" />
               Estimated processing time: ~30 seconds
@@ -344,6 +319,7 @@ export default function CreateFeedPage() {
             type="submit"
             className="w-full bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-300"
             disabled={isSubmitting}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onClick={(e) => handleSubmit(e as any)}
           >
             {isSubmitting ? (
