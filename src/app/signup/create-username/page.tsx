@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { ChangeEvent, useEffect, useState } from "react";
@@ -91,7 +90,7 @@ export default function UsernameSelectionPage() {
         toast.error(response.message || "Failed to update username");
       } else {
         toast.success("Username updated successfully");
-        setSuggestedUsernames([]); // Clear suggestions on success
+        setSuggestedUsernames([]);
         router.push("/h");
       }
     } catch (error) {
@@ -103,12 +102,12 @@ export default function UsernameSelectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h1 className="text-center text-3xl font-extrabold text-gray-900">
           HushMail
         </h1>
-        <h2 className="mt-6 text-center text-2xl font-bold text-gray-900">
+        <h2 className="mt-6 text-center text-xl sm:text-2xl font-bold text-gray-900">
           Choose your username
         </h2>
       </div>
@@ -139,7 +138,7 @@ export default function UsernameSelectionPage() {
                       onChange={(e: ChangeEvent<HTMLInputElement>) => {
                         const { value } = e.target;
                         setFieldValue("username", value);
-                        setUsernameError(""); // Reset username error
+                        setUsernameError("");
                         debouncedCheckUsername(value);
                       }}
                     />
@@ -161,14 +160,14 @@ export default function UsernameSelectionPage() {
                     <p className="text-sm text-gray-600">
                       The username is taken. Try one of these suggestions:
                     </p>
-                    <ul className="list-disc list-inside text-gray-700">
+                    <ul className="list-disc list-inside text-gray-700 mt-2">
                       {suggestedUsernames.map((suggestion, index) => (
                         <li
                           key={index}
-                          className="cursor-pointer"
+                          className="cursor-pointer hover:text-indigo-600 transition-colors duration-200"
                           onClick={() => {
                             setFieldValue("username", suggestion);
-                            setUsernameError(""); // Reset error on suggestion click
+                            setUsernameError("");
                           }}
                         >
                           {suggestion}
@@ -182,7 +181,7 @@ export default function UsernameSelectionPage() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
                   >
                     {isSubmitting ? "Validating..." : "Set Username"}
                   </Button>
